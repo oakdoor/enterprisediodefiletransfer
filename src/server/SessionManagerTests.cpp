@@ -7,7 +7,7 @@
 #include "SessionManager.hpp"
 #include "StreamSpy.hpp"
 
-#define WAIT_FOR_ASYNC_THREAD sessionManager.checkStreamFutures()
+#define WAIT_FOR_ASYNC_THREAD   usleep(10000); sessionManager.checkStreamFutures()
 
 TEST_CASE("SessionManager.")
 {
