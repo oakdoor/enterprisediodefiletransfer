@@ -17,18 +17,6 @@ ReorderPackets::ReorderPackets(
   std::uint32_t maxBufferSize,
   std::uint32_t maxQueueLength,
   DiodeType diodeType,
-  std::uint32_t maxFilenameLength) :
-    sislFilename(maxFilenameLength),
-    maxBufferSize(maxBufferSize),
-    maxQueueLength(maxQueueLength),
-    diodeType(diodeType)
-{
-}
-
-ReorderPackets::ReorderPackets(
-  std::uint32_t maxBufferSize,
-  std::uint32_t maxQueueLength,
-  DiodeType diodeType,
   std::promise<int>&& isStreamClosedPromise,
   std::uint32_t maxFilenameLength):
     sislFilename(maxFilenameLength),
@@ -157,6 +145,7 @@ void ReorderPackets::writeFrame(StreamInterface* streamWrapper, Packet&& packet)
       streamingRewrapper.rewrap(
         packet.getFrame(), packet.headerParams.cloakedDaggerHeader,
         nextFrameCount));
+    lastFrameWritten = packet.headerParams.frameCount;
   }
   else
   {

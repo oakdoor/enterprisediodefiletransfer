@@ -27,12 +27,6 @@ public:
     std::uint32_t maxBufferSize,
     std::uint32_t maxQueueLength,
     DiodeType diodeType,
-    std::uint32_t maxFilenameLength = 65);
-
-  explicit ReorderPackets(
-    std::uint32_t maxBufferSize,
-    std::uint32_t maxQueueLength,
-    DiodeType diodeType,
     std::promise<int>&& isStreamClosedPromise,
     std::uint32_t maxFilenameLength = 65);
 
