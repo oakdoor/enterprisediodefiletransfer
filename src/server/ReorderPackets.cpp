@@ -2,16 +2,16 @@
 // MIT License. For licence terms see LICENCE.md file.
 
 #include "ReorderPackets.hpp"
-#include "TestQueue.hpp"
+#include "ConcurrentOrderedPacketQueue.hpp"
 #include "Packet.hpp"
 #include "StreamInterface.hpp"
 #include "TotalFrames.hpp"
-#include <chrono>
-#include <iostream>
-#include <thread>
-#include <future>
-#include <optional>
 #include "spdlog/spdlog.h"
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <optional>
+#include <thread>
 
 ReorderPackets::ReorderPackets(
   std::uint32_t maxBufferSize,
@@ -83,8 +83,8 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
     try
     {
       auto queueResponse = queue.nextInSequencedPacket(nextFrameCount, lastFrameWritten);
-      TestQueue::sequencedPacketStatus packetStatus = queueResponse.first;
-      if (packetStatus == TestQueue::sequencedPacketStatus::found)
+      ConcurrentOrderedPacketQueue::sequencedPacketStatus packetStatus = queueResponse.first;
+      if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::found)
       {
         Packet packet(std::move(queueResponse.second.value()));
         if (packet.headerParams.eOFFlag)
@@ -102,19 +102,19 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
           ++nextFrameCount;
         }
       }
-      else if (packetStatus == TestQueue::sequencedPacketStatus::discarded)
+      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::discarded)
       {
         continue;
       }
-      else if (packetStatus == TestQueue::sequencedPacketStatus::waiting)
+      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::waiting)
       {
         std::this_thread::sleep_for(std::chrono::microseconds(50));
       }
-      else if (packetStatus == TestQueue::sequencedPacketStatus::q_empty)
+      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::q_empty)
       {
         std::this_thread::sleep_for(std::chrono::microseconds(50));
       }
-      else if (packetStatus == TestQueue::sequencedPacketStatus::error)
+      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::error)
       {
         unloadQueueThreadState = ReorderPackets::unloadQueueThreadStatus::error;
         throw std::string("Queue Error");

@@ -1,16 +1,16 @@
 // Copyright PA Knowledge Ltd 2021
 // MIT License. For licence terms see LICENCE.md file.
 
+#include "ConcurrentOrderedPacketQueue.hpp"
 #include "Packet.hpp"
 #include "SISLFilename.hpp"
 #include <BytesBuffer.hpp>
 #include <algorithm>
-#include <optional>
 #include <future>
+#include <optional>
 #include <queue>
 #include <rewrapper/StreamingRewrapper.hpp>
 #include <thread>
-#include "TestQueue.hpp"
 
 class StreamInterface;
 
@@ -49,7 +49,7 @@ private:
   const std::uint32_t maxBufferSize;
   const std::uint32_t maxQueueLength;
 
-  TestQueue queue;
+  ConcurrentOrderedPacketQueue queue;
 
   const DiodeType diodeType;
   StreamingRewrapper streamingRewrapper;
