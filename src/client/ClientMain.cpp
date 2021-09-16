@@ -19,7 +19,7 @@ struct Params
   std::uint16_t mtuSize;
   std::string logLevel;
   std::uint16_t sendPeriod;
-  std::uint32_t numberOfPackets;
+  std::int32_t numberOfPackets;
 };
 
 inline Params parseArgs(int argc, char **argv)
@@ -30,7 +30,7 @@ inline Params parseArgs(int argc, char **argv)
   std::uint16_t clientPort;
   std::uint16_t mtuSize = 1500;
   std::uint16_t sendPeriod = 0;
-  std::uint32_t numberOfPackets = 1;
+  std::int32_t numberOfPackets = -1;
   double dataRateMbps = 0;
   std::string logLevel = "info";
   const auto cli = clara::Help(showHelp) |

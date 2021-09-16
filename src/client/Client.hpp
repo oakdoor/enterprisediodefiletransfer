@@ -22,7 +22,7 @@ public:
   Client(std::shared_ptr<UdpClientInterface> udpClient,
     std::shared_ptr<TimerInterface> timer,
     std::uint16_t maxPayloadSize,
-    std::uint32_t numberOfPackets,
+    std::int32_t numberOfPackets,
     std::string filename="received");
 
   void send(std::istream& inputStream);
@@ -42,7 +42,7 @@ private:
   std::uint32_t maxPayloadSize;
   std::array<char, EnterpriseDiode::HeaderSizeInBytes> headerBuffer;
   std::vector<char> payloadBuffer;
-  std::uint32_t numberOfPackets = 1;
+  std::int32_t numberOfPackets = -1;
   const std::string filename;
   std::string filenameAsSisl;
 };

@@ -33,7 +33,7 @@ ClientWrapper::ClientWrapper(
   std::string filename,
   const std::string& logLevel,
   std::uint16_t sendPeriod,
-  std::uint32_t numberOfPackets) :
+  std::int32_t numberOfPackets) :
     edClient(
       std::make_shared<UdpClient>(targetAddress, targetPort),
       selectTimer(mtuSize, dataRateMbps, sendPeriod),

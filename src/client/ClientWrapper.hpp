@@ -32,7 +32,7 @@ public:
     std::string filename,
     const std::string& logLevel,
     std::uint16_t sendperiod,
-    std::uint32_t numberOfPackets);
+    std::int32_t numberOfPackets);
 
   void sendData(const std::string& filename);
 
