@@ -28,4 +28,14 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
     REQUIRE(packet.headerParams.eOFFlag == false);
     REQUIRE(std::string(packet.payload.begin(), packet.payload.end()) == "AB");
   }
+
+  SECTION("ConcurrentOrderedPacketQueue discards duplicated packets and returns the 'discared' status")
+  {
+    queue.emplace({HeaderParams{0, 5, false, {}}, {'A', 'B'}});
+    auto queueResponse = queue.nextInSequencePacket(9, 8);
+
+    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::discarded);
+    REQUIRE_FALSE(queueResponse.second.has_value());
+    REQUIRE(queue.empty());
+  }
 }
