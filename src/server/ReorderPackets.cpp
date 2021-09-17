@@ -82,7 +82,7 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
   {
     try
     {
-      auto queueResponse = queue.nextInSequencedPacket(nextFrameCount, lastFrameWritten);
+      auto queueResponse = queue.nextInSequencePacket(nextFrameCount, lastFrameWritten);
       ConcurrentOrderedPacketQueue::sequencedPacketStatus packetStatus = queueResponse.first;
       if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::found)
       {

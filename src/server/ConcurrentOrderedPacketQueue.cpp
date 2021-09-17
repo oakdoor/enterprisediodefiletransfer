@@ -49,7 +49,7 @@ bool ConcurrentOrderedPacketQueue::empty()
   return queue.empty();
 }
 
-std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> ConcurrentOrderedPacketQueue::nextInSequencedPacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten)
+std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> ConcurrentOrderedPacketQueue:: nextInSequencePacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten)
 {
   std::unique_lock<std::mutex> lock_b(queueIsBusy);
   if (queue.empty()) return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(sequencedPacketStatus::q_empty, {});

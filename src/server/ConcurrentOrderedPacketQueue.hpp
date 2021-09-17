@@ -22,7 +22,7 @@ public:
   void pop();
   size_t size();
   bool empty();
-  std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> nextInSequencedPacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten);
+  std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> nextInSequencePacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten);
 
 private:
   std::priority_queue<Packet, std::vector<Packet>, std::greater<Packet>> queue;
