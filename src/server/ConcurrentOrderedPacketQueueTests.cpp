@@ -9,10 +9,23 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
 {
   ConcurrentOrderedPacketQueue queue;
 
-  SECTION("ConcurrentOrderedPacketQueue returns the q_empty status and no packet if the queue is empty")
+  SECTION("ConcurrentOrderedPacketQueue returns the 'q_empty' status and no packet if the queue is empty")
   {
     auto queueResponse = queue.nextInSequencePacket(1, 0);
     REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::q_empty);
     REQUIRE_FALSE(queueResponse.second.has_value());
+  }
+
+  SECTION("ConcurrentOrderedPacketQueue returns the 'found' status "
+          "and the packet at the top of the queue if it's the next in the sequence")
+  {
+    queue.emplace({HeaderParams{0, 1, false, {}}, {'A', 'B'}});
+    auto queueResponse = queue.nextInSequencePacket(1, 0);
+
+    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::found);
+    Packet packet(std::move(queueResponse.second.value()));
+    REQUIRE(packet.headerParams.frameCount == 1);
+    REQUIRE(packet.headerParams.eOFFlag == false);
+    REQUIRE(std::string(packet.payload.begin(), packet.payload.end()) == "AB");
   }
 }
