@@ -28,4 +28,5 @@ add_library(SERVER_LIBRARY_TESTS
         ReorderPacketsTests.cpp
         OrderingStreamWriterTests.cpp
         StreamSpy.hpp
-        SislFilenameTests.cpp)
+        SislFilenameTests.cpp
+        ConcurrentOrderedPacketQueueTests.cpp)
