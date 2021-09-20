@@ -55,7 +55,7 @@ void ReorderPackets::addFrameToQueue(Packet&& packet)
   {
     if (!queueAlreadyExceeded)
     {
-      spdlog::error("ReorderPackets: maxQueueLength exceeded." + std::to_string(queueSize));
+      spdlog::error("#ReorderPackets: maxQueueLength exceeded." + std::to_string(queueSize));
       spdlog::error(std::string("Last frame: ") + std::to_string(lastFrameReceived) +
            std::string(" This frame: ") + std::to_string(packet.headerParams.frameCount));
       queueAlreadyExceeded = true;
@@ -72,7 +72,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
   unloadQueueThreadState = unloadQueueThreadStatus::running;
   queueProcessorThread = new std::thread(&ReorderPackets::unloadQueueThread, this, streamWrapper);
   queueProcessorThread->detach();
-  spdlog::info("started thread");
+  spdlog::info("#started thread");
 }
 
 void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
@@ -117,7 +117,7 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
       else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::error)
       {
         unloadQueueThreadState = ReorderPackets::unloadQueueThreadStatus::error;
-        throw std::string("Queue Error");
+        throw std::string("#Queue Error");
       }
     }
     catch (std::string ex)
@@ -131,7 +131,7 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
     }
     catch (const std::exception& ex)
     {
-      spdlog::info("Caught exception: " + std::string(ex.what()));
+      spdlog::info("#Caught exception: " + std::string(ex.what()));
     }
   }
   spdlog::info("#Exiting thread. TODO handle thread cleanup.");

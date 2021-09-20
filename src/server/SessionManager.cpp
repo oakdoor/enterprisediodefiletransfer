@@ -85,7 +85,7 @@ void SessionManager::checkStreamFutures()
   for (auto& sessionFuturePair : streamFutures)
   {
     std::cerr << "sessionID:" << sessionFuturePair.first;
-    if (sessionFuturePair.second.valid() && (sessionFuturePair.second.wait_for(std::chrono::microseconds(10)) == std::future_status::ready))
+    if (sessionFuturePair.second.valid() && (sessionFuturePair.second.wait_for(std::chrono::microseconds(100)) == std::future_status::ready))
     {
       int state = sessionFuturePair.second.get();
       std::cerr << " state:" << state << std::endl;
