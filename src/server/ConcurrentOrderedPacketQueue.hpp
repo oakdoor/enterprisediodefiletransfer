@@ -5,15 +5,17 @@
 #define ENTERPRISEDIODETESTER_CONCURRENTORDEREDPACKETQUEUE_HPP
 
 #include "Packet.hpp"
-#include <queue>
+#include <iostream>
 #include <mutex>
 #include <optional>
+#include <queue>
 
 class ConcurrentOrderedPacketQueue
 {
 public:
   ConcurrentOrderedPacketQueue();
   ConcurrentOrderedPacketQueue(ConcurrentOrderedPacketQueue&& fromQueue);
+  ~ConcurrentOrderedPacketQueue() { std::cerr << "ConcurrentQueue was destructed" << queue.size() << std::endl; };
 
   enum sequencedPacketStatus { error, q_empty, found, waiting, discarded };
 

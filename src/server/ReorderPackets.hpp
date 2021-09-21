@@ -54,7 +54,7 @@ private:
   const DiodeType diodeType;
   StreamingRewrapper streamingRewrapper;
 
-  std::thread* queueProcessorThread;
+  std::unique_ptr<std::thread> queueProcessorThread;
   std::uint32_t lastFrameWritten = 0;
 
   long unsigned int queueSize;

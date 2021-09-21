@@ -31,7 +31,7 @@ TEST_CASE("ReorderPackets. Packets received in order are written to the output")
   REQUIRE(outputStream.str() == "BCDE");
 }
 
-TEST_CASE("ReorderPackets. Handling filename")
+TEST_CASE("ReorderPackets. Handling filename", "[tagged]")
 {
   std::promise<int> isStreamClosedPromise;
   std::future<int> isStreamClosedFuture = isStreamClosedPromise.get_future();

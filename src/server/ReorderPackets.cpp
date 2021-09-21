@@ -10,6 +10,7 @@
 #include <chrono>
 #include <future>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <thread>
 
@@ -50,6 +51,7 @@ void ReorderPackets::logOutOfOrderPackets(uint32_t frameCount)
 
 void ReorderPackets::addFrameToQueue(Packet&& packet)
 {
+  std::cerr << "Queue address (size): " << &queue << "\n";
   queueSize = queue.size();
   if (queueSize >= maxQueueLength)
   {
@@ -62,7 +64,11 @@ void ReorderPackets::addFrameToQueue(Packet&& packet)
     }
     return;
   }
+  std::cerr << "Queue address (emplace): " << &queue << "\n";
+  std::cerr << "Packet address: " << &packet << "\n";
   queue.emplace(std::move(packet));
+  std::cerr << "Queue address (after emplace): " << &queue << "\n";
+  std::cerr << "Queue size: " << queue.size() << "\n";
   queueUsagePeak = queueSize > queueUsagePeak ? queueSize : queueUsagePeak;
   //spdlog::info("size=" + std::to_string(queueSize));
 }
@@ -70,8 +76,16 @@ void ReorderPackets::addFrameToQueue(Packet&& packet)
 void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 {
   unloadQueueThreadState = unloadQueueThreadStatus::running;
-  queueProcessorThread = new std::thread(&ReorderPackets::unloadQueueThread, this, streamWrapper);
-  queueProcessorThread->detach();
+  try
+  {
+    queueProcessorThread = std::make_unique<std::thread>(&ReorderPackets::unloadQueueThread, this, streamWrapper);
+    queueProcessorThread->detach();
+  }
+  catch (const std::system_error& exception)
+  {
+    spdlog::error(std::string("#Caught exception when starting thread: ") + exception.what());
+    exit(1);
+  }
   spdlog::info("#started thread");
 }
 

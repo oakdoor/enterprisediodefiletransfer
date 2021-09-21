@@ -4,11 +4,11 @@
 #include "ConcurrentOrderedPacketQueue.hpp"
 #include "Packet.hpp"
 #include "spdlog/spdlog.h"
+#include <iostream>
 
 ConcurrentOrderedPacketQueue::ConcurrentOrderedPacketQueue()
 {
-  //std::priority_queue<Packet, std::vector<Packet>, std::greater<>> queue;
-  //std::mutex queueIsBusy;
+  std::cerr << "This is a primary constructor" << std::endl;
 }
 
 ConcurrentOrderedPacketQueue::ConcurrentOrderedPacketQueue(ConcurrentOrderedPacketQueue&& fromQueue)
@@ -17,7 +17,8 @@ ConcurrentOrderedPacketQueue::ConcurrentOrderedPacketQueue(ConcurrentOrderedPack
   std::unique_lock<std::mutex> lock_b(queueIsBusy, std::defer_lock);
   std::lock(lock_a, lock_b);
   std::swap(fromQueue.queue, queue);
-}  
+  std::cerr << "This is a move constructor " << queue.size() << std::endl;
+}
 
 void ConcurrentOrderedPacketQueue::emplace(Packet&& packet)
 {
@@ -49,23 +50,40 @@ bool ConcurrentOrderedPacketQueue::empty()
   return queue.empty();
 }
 
-std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> ConcurrentOrderedPacketQueue:: nextInSequencePacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten)
+std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>> ConcurrentOrderedPacketQueue::nextInSequencePacket(std::uint32_t nextFrameCount, std::uint32_t lastFrameWritten)
 {
-  std::unique_lock<std::mutex> lock_b(queueIsBusy);
-  if (queue.empty()) return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(sequencedPacketStatus::q_empty, {});
-  if (queue.top().headerParams.frameCount == nextFrameCount)
+  try
   {
-    // Priority queue does not support moving out of top of queue, so we need const cast to remove the const reference and allow move
-    Packet topFrame(std::move(const_cast<Packet&>(queue.top())));
-    queue.pop();
-    return std::make_pair(sequencedPacketStatus::found, std::move(topFrame));
+    std::unique_lock<std::mutex> lock_b(queueIsBusy);
+//    std::cerr << "#nxtfrm, lstfrm, qaddr, paddr, frmcnt, qsize"
+//              << "\n";
+//    std::cerr << nextFrameCount << " " << lastFrameWritten << " " << &queue << " " << &queue.top() << " "
+//              << queue.top().headerParams.frameCount << " " << queue.size() << "\n";
+    if (queue.empty())
+      return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(
+        sequencedPacketStatus::q_empty, {});
+    if (queue.top().headerParams.frameCount == nextFrameCount)
+    {
+      // Priority queue does not support moving out of top of queue, so we need const cast to remove the const reference and allow move
+      Packet topFrame(std::move(const_cast<Packet&>(queue.top())));
+      queue.pop();
+      return std::make_pair(sequencedPacketStatus::found, std::move(topFrame));
+    }
+    if (queue.top().headerParams.frameCount <= lastFrameWritten)
+    {
+      spdlog::info("#discarding frame: " + std::to_string(queue.top().headerParams.frameCount));
+      queue.pop();
+      spdlog::info("#queue size:" + std::to_string(queue.size()));
+      return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(
+        sequencedPacketStatus::discarded, {});
+    }
+    return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(
+      sequencedPacketStatus::waiting, {});
   }
-  if (queue.top().headerParams.frameCount <= lastFrameWritten)
+  catch (const std::system_error& exception)
   {
-    spdlog::info("#discarding frame: " + std::to_string(queue.top().headerParams.frameCount));
-    queue.pop();
-    spdlog::info("#queue size:" + std::to_string(queue.size()));
-    return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(sequencedPacketStatus::discarded, {});
+    spdlog::error(std::string("#Caught exception in next in sequence func: ") + exception.what());
+    std::cerr << exception.code() << "\n";
+    exit(1);
   }
-  return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(sequencedPacketStatus::waiting, {});
 }
