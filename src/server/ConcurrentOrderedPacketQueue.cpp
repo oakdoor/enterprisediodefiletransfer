@@ -54,7 +54,12 @@ std::pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Pac
 {
   try
   {
-    std::unique_lock<std::mutex> lock_b(queueIsBusy);
+    std::unique_lock<std::mutex> lock_b(queueIsBusy, std::defer_lock);
+    if (!lock_b.try_lock())
+    {
+      return std::make_pair<ConcurrentOrderedPacketQueue::sequencedPacketStatus, std::optional<Packet>>(
+        sequencedPacketStatus::waiting, {});
+    }
 //    std::cerr << "#nxtfrm, lstfrm, qaddr, paddr, frmcnt, qsize"
 //              << "\n";
 //    std::cerr << nextFrameCount << " " << lastFrameWritten << " " << &queue << " " << &queue.top() << " "
