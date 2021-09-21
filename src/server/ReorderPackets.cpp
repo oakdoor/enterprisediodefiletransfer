@@ -76,7 +76,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
   unloadQueueThreadState = unloadQueueThreadStatus::running;
   try
   {
-    queueProcessorThread = std::async(std::launch::async, [&]() {ReorderPackets::unloadQueueThread(streamWrapper); return true; });
+    queueProcessorThread = std::async(std::launch::async, [&, streamWrapper]() {ReorderPackets::unloadQueueThread(streamWrapper); return true; });
   }
   catch (const std::system_error& exception)
   {
