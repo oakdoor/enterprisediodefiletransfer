@@ -18,14 +18,12 @@ ReorderPackets::ReorderPackets(
   std::uint32_t maxBufferSize,
   std::uint32_t maxQueueLength,
   DiodeType diodeType,
-  std::promise<int>&& isStreamClosedPromise,
   std::uint32_t maxFilenameLength):
     sislFilename(maxFilenameLength),
     maxBufferSize(maxBufferSize),
     maxQueueLength(maxQueueLength),
     diodeType(diodeType)
 {
-  streamClosedPromise = std::move(isStreamClosedPromise);
 }
 
 void ReorderPackets::write(Packet&& packet, StreamInterface* streamWrapper)
@@ -78,8 +76,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
   unloadQueueThreadState = unloadQueueThreadStatus::running;
   try
   {
-    queueProcessorThread = std::make_unique<std::thread>(&ReorderPackets::unloadQueueThread, this, streamWrapper);
-    queueProcessorThread->detach();
+    queueProcessorThread = std::async(std::launch::async, [&]() {ReorderPackets::unloadQueueThread(streamWrapper); return true; });
   }
   catch (const std::system_error& exception)
   {
@@ -91,8 +88,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 
 void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
 {
-  std::this_thread::sleep_for(std::chrono::microseconds(30));
-  while (unloadQueueThreadState == unloadQueueThreadStatus::running)
+  while (true)
   {
     try
     {
@@ -103,52 +99,27 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
         Packet packet(std::move(queueResponse.second.value()));
         if (packet.headerParams.eOFFlag)
         {
+          writeFrame(streamWrapper, std::move(packet));
+          ++nextFrameCount;
           streamWrapper->setStoredFilename(
             sislFilename.extractFilename(packet.getFrame()).value_or("rejected."));
-          unloadQueueThreadState = unloadQueueThreadStatus::done;
           streamWrapper->renameFile();
-          streamClosedPromise.set_value(1);
           spdlog::info("#File completed.");
-        } 
-        else 
+          return;
+        }
+        else
         {
           writeFrame(streamWrapper, std::move(packet));
           ++nextFrameCount;
         }
       }
-      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::discarded)
-      {
-        continue;
-      }
-      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::waiting)
-      {
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
-      }
-      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::q_empty)
-      {
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
-      }
-      else if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::error)
-      {
-        unloadQueueThreadState = ReorderPackets::unloadQueueThreadStatus::error;
-        throw std::string("#Queue Error");
-      }
-    }
-    catch (std::string ex)
-    {
-      spdlog::info(ex);
-      unloadQueueThreadState = unloadQueueThreadStatus::interrupted;
-      spdlog::info("#exiting thread while expecting frame: " + std::to_string(nextFrameCount));
-      spdlog::info("#queue size:" + std::to_string(queue.size()));
-      spdlog::info("#frame on top of queue: " + std::to_string(queue.top().headerParams.frameCount));
-      throw std::string("#unloadThreadQueue:") + std::to_string(unloadQueueThreadState);
+      std::this_thread::sleep_for(std::chrono::microseconds(50));
     }
     catch (const std::exception& ex)
     {
       spdlog::info("#Caught exception: " + std::string(ex.what()));
     }
   }
-  spdlog::info("#Exiting thread. TODO handle thread cleanup.");
 }
 
 void ReorderPackets::writeFrame(StreamInterface* streamWrapper, Packet&& packet)
@@ -166,4 +137,8 @@ void ReorderPackets::writeFrame(StreamInterface* streamWrapper, Packet&& packet)
     lastFrameWritten = packet.headerParams.frameCount;
     streamWrapper->write(packet.getFrame());
   }
+}
+bool ReorderPackets::isDone() const
+{
+  return queueProcessorThread.valid() && (queueProcessorThread.wait_for(std::chrono::microseconds(100)) == std::future_status::ready);
 }

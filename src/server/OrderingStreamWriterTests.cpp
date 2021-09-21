@@ -17,7 +17,7 @@ TEST_CASE("OrderingStreamWriter. Packet streams are written to the packet queue"
 
   std::stringstream outputStream;
   auto streamWriter = OrderingStreamWriter(
-    1, 1, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::basic, std::move(isStreamClosedPromise));
+    1, 1, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::basic);
 
   auto packet = parsePacket(createTestPacketStream(1, 1, false), {'A', 'B'});
 
@@ -33,7 +33,7 @@ TEST_CASE("OrderingStreamWriter. Import diode - packet stream and cloakedDaggerH
 
   std::stringstream outputStream;
   auto streamWriter = OrderingStreamWriter(
-    1, 1, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::import, std::move(isStreamClosedPromise));
+    1, 1, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::import);
 
   auto packet = parsePacket(createTestPacketStream(1, 1, false, true), {'A', 'B'});
 
@@ -49,7 +49,7 @@ TEST_CASE("OrderingStreamWriter. Write returns true when the eof has been receiv
 
   std::stringstream outputStream;
   auto streamWriter = OrderingStreamWriter(
-    1, 5, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::basic, std::move(isStreamClosedPromise));
+    1, 5, std::make_unique<StreamSpy>(outputStream, 1), []() { return 10000; }, DiodeType::basic);
 
   SECTION("When the EOF packet is not queued")
   {
@@ -98,7 +98,7 @@ TEST_CASE(
   std::uint32_t initialTime = 500;
   OrderingStreamWriter orderingStreamWriter(
     1, 1, std::make_unique<StreamSpy>(outputStream, 1), [&initialTime]() mutable { return initialTime; },
-    DiodeType::basic, std::move(isStreamClosedPromise));
+    DiodeType::basic);
 
   REQUIRE(orderingStreamWriter.timeLastUpdated == 500);
 

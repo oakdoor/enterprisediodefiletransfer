@@ -10,9 +10,8 @@ OrderingStreamWriter::OrderingStreamWriter(
   std::uint32_t maxQueueLength,
   std::unique_ptr<StreamInterface> streamWrapper,
   std::function<std::time_t()> getTime,
-  DiodeType diodeType,
-  std::promise<int>&& isStreamClosedPromise):
-    packetQueue(maxBufferSize, maxQueueLength, diodeType, std::move(isStreamClosedPromise)),
+  DiodeType diodeType):
+    packetQueue(maxBufferSize, maxQueueLength, diodeType),
     streamWrapper(std::move(streamWrapper)),
     getTime(std::move(getTime)),
     timeLastUpdated(this->getTime())

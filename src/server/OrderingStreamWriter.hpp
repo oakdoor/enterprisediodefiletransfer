@@ -19,10 +19,9 @@ public:
   explicit OrderingStreamWriter(
     std::uint32_t maxBufferSize,
     std::uint32_t maxQueueLength,
-    std::unique_ptr<StreamInterface> stream,
+    std::unique_ptr<StreamInterface> streamWrapper,
     std::function<std::time_t()> getTime,
-    DiodeType diodeType,
-    std::promise<int>&& isStreamClosedPromise);
+    DiodeType diodeType);
 
   void write(Packet&& data);
   void deleteFile();

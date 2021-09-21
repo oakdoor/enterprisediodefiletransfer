@@ -52,8 +52,7 @@ void SessionManager::createNewSession(std::uint32_t sessionId)
   std::promise<int> isStreamClosedPromise;
   std::future<int> isStreamClosedFuture = isStreamClosedPromise.get_future();
   streams.emplace(std::make_pair(
-    sessionId,
-    OrderingStreamWriter(maxBufferSize, maxQueueLength, streamCreator(sessionId), getTime, diodeType, std::move(isStreamClosedPromise))));
+    sessionId, OrderingStreamWriter(maxBufferSize, maxQueueLength, streamCreator(sessionId), getTime, diodeType)));
   streamFutures.emplace(sessionId, std::move(isStreamClosedFuture));
 }
 
