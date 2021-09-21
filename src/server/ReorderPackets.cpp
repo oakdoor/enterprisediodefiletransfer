@@ -93,25 +93,22 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
     try
     {
       auto queueResponse = queue.nextInSequencePacket(nextFrameCount, lastFrameWritten);
-      ConcurrentOrderedPacketQueue::sequencedPacketStatus packetStatus = queueResponse.first;
-      if (packetStatus == ConcurrentOrderedPacketQueue::sequencedPacketStatus::found)
+      if (queueResponse)
       {
-        Packet packet(std::move(queueResponse.second.value()));
-        if (packet.headerParams.eOFFlag)
+        if (queueResponse->headerParams.eOFFlag)
         {
           streamWrapper->setStoredFilename(
-            sislFilename.extractFilename(packet.getFrame()).value_or("rejected."));
+            sislFilename.extractFilename(queueResponse->getFrame()).value_or("rejected."));
           streamWrapper->renameFile();
           spdlog::info("#File completed.");
           return;
         }
         else
         {
-          writeFrame(streamWrapper, std::move(packet));
+          writeFrame(streamWrapper, std::move(*queueResponse));
           ++nextFrameCount;
         }
       }
-      std::this_thread::sleep_for(std::chrono::microseconds(50));
     }
     catch (const std::exception& ex)
     {

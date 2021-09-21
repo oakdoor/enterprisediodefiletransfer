@@ -11,9 +11,7 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
 
   SECTION("ConcurrentOrderedPacketQueue returns the 'q_empty' status and no packet if the queue is empty")
   {
-    auto queueResponse = queue.nextInSequencePacket(1, 0);
-//    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::q_empty);
-//    REQUIRE_FALSE(queueResponse.second.has_value());
+    REQUIRE_FALSE(queue.nextInSequencePacket(1, 0).has_value());
   }
 
   SECTION("ConcurrentOrderedPacketQueue returns the 'found' status "
@@ -22,8 +20,7 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
     queue.emplace({HeaderParams{0, 1, false, {}}, {'A', 'B'}});
     auto queueResponse = queue.nextInSequencePacket(1, 0);
 
-    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::found);
-    Packet packet(std::move(queueResponse.second.value()));
+    Packet packet(std::move(queueResponse.value()));
     REQUIRE(packet.headerParams.frameCount == 1);
     REQUIRE(packet.headerParams.eOFFlag == false);
     REQUIRE(std::string(packet.payload.begin(), packet.payload.end()) == "AB");
@@ -37,8 +34,7 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
     queue.emplace({HeaderParams{0, 4, false, {}}, {'E', 'F'}});
     auto queueResponse = queue.nextInSequencePacket(1, 0);
 
-    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::waiting);
-    REQUIRE_FALSE(queueResponse.second.has_value());
+    REQUIRE_FALSE(queueResponse.has_value());
   }
 
   SECTION("ConcurrentOrderedPacketQueue discards duplicated packets and returns the 'discared' status")
@@ -46,8 +42,7 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
     queue.emplace({HeaderParams{0, 5, false, {}}, {'A', 'B'}});
     auto queueResponse = queue.nextInSequencePacket(9, 8);
 
-    REQUIRE(queueResponse.first == ConcurrentOrderedPacketQueue::sequencedPacketStatus::discarded);
-    REQUIRE_FALSE(queueResponse.second.has_value());
+    REQUIRE_FALSE(queueResponse.has_value());
     REQUIRE(queue.empty());
   }
 }
