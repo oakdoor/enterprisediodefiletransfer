@@ -27,40 +27,37 @@ TEST_CASE("ReorderPackets. Packets received in order are written to the output")
   auto queueManager = ReorderPackets(4, 1024, DiodeType::basic);
   queueManager.write({HeaderParams{0, 1, false, {}}, {'B', 'C'}}, &stream);
 
-  queueManager.write({HeaderParams{0, 2, true, {}}, {'D', 'E'}}, &stream);
+  queueManager.write({HeaderParams{0, 2, true, {}}, {}}, &stream);
   waitForQueue(queueManager);
   REQUIRE(queueManager.isDone());
-  REQUIRE(outputStream.str() == "BCDE");
+  REQUIRE(outputStream.str() == "BC");
 }
 
-//TEST_CASE("ReorderPackets. Handling filename", "[tagged]")
-//{
-//  std::promise<int> isStreamClosedPromise;
-//  std::future<int> isStreamClosedFuture = isStreamClosedPromise.get_future();
-//  bool notused1;
-//  bool notused2;
-//  std::stringstream outputStream;
-//  StreamSpy stream(outputStream, 1, notused1, notused2);
-//  auto queueManager = ReorderPackets(4, 1024, DiodeType::basic, std::move(isStreamClosedPromise));
-//
-//  SECTION("good filename")
-//  {
-//    auto inputStream = std::string("{name: !str \"testFilename\"}");
-//    queueManager.write({HeaderParams{0, 1, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//    WAIT_FOR_FUTURE;
-//    REQUIRE(outputStream.str().empty());
-//    REQUIRE(stream.storedFilename == "testFilename");
-//  }
-//
-//  SECTION("Handling filename with length > maxFilenameLength, 65")
-//  {
-//    auto inputStream = std::string("{name: !str \"testFilenametestFilenametestFilenametestFilenametestFilenametestFilename\"}");
-//    queueManager.write({HeaderParams{0, 1, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//    WAIT_FOR_FUTURE;
-//    REQUIRE(outputStream.str().empty());
-//    REQUIRE(stream.storedFilename == "rejected.12345");
-//  }
-//}
+TEST_CASE("ReorderPackets. Handling filename", "[tagged]")
+{
+
+  bool notused1;
+  bool notused2;
+  std::stringstream outputStream;
+  StreamSpy stream(outputStream, 1, notused1, notused2);
+  auto queueManager = ReorderPackets(4, 1024, DiodeType::basic);
+
+  SECTION("good filename")
+  {
+    auto inputStream = std::string("{name: !str \"testFilename\"}");
+    queueManager.write({HeaderParams{0, 1, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+    waitForQueue(queueManager);
+    REQUIRE(stream.storedFilename == "testFilename");
+  }
+
+  SECTION("Handling filename with length > maxFilenameLength, 65")
+  {
+    auto inputStream = std::string("{name: !str \"testFilenametestFilenametestFilenametestFilenametestFilenametestFilename\"}");
+    queueManager.write({HeaderParams{0, 1, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+    waitForQueue(queueManager);
+    REQUIRE(stream.storedFilename == "rejected.12345");
+  }
+}
 //
 //TEST_CASE("ReorderPackets. Out-of-order packets")
 //{

@@ -99,8 +99,6 @@ void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
         Packet packet(std::move(queueResponse.second.value()));
         if (packet.headerParams.eOFFlag)
         {
-          writeFrame(streamWrapper, std::move(packet));
-          ++nextFrameCount;
           streamWrapper->setStoredFilename(
             sislFilename.extractFilename(packet.getFrame()).value_or("rejected."));
           streamWrapper->renameFile();
@@ -140,5 +138,5 @@ void ReorderPackets::writeFrame(StreamInterface* streamWrapper, Packet&& packet)
 }
 bool ReorderPackets::isDone() const
 {
-  return queueProcessorThread.valid() && (queueProcessorThread.wait_for(std::chrono::microseconds(100)) == std::future_status::ready);
+  return queueProcessorThread.wait_for(std::chrono::microseconds(0)) == std::future_status::ready;
 }
