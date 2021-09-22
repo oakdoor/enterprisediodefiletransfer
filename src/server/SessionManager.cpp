@@ -49,11 +49,8 @@ void SessionManager::createSessionIfNewId(const std::uint32_t sessionId)
 
 void SessionManager::createNewSession(std::uint32_t sessionId)
 {
-  std::promise<int> isStreamClosedPromise;
-  std::future<int> isStreamClosedFuture = isStreamClosedPromise.get_future();
   streams.emplace(std::make_pair(
     sessionId, OrderingStreamWriter(maxBufferSize, maxQueueLength, streamCreator(sessionId), getTime, diodeType)));
-  streamFutures.emplace(sessionId, std::move(isStreamClosedFuture));
 }
 
 bool SessionManager::isStreamExpired(std::uint32_t sessionId)
@@ -76,26 +73,4 @@ void SessionManager::writeFileAndSaveIfComplete(Packet&& packet)
 void SessionManager::closeSession(std::uint32_t sessionId)
 {
   streams.erase(sessionId);
-  streamFutures.erase(sessionId);
-}
-
-void SessionManager::checkStreamFutures()
-{
-  for (auto& sessionFuturePair : streams)
-  {
-    std::cerr << "sessionID:" << sessionFuturePair.first;
-//    if (sessionFuturePair.second.valid() && (sessionFuturePair.second.wait_for(std::chrono::microseconds(100)) == std::future_status::ready))
-//    {
-//      int state = sessionFuturePair.second.get();
-//      std::cerr << " state:" << state << std::endl;
-//      if (state == 1)
-//      {
-//        closeSession(sessionFuturePair.first);
-//      }
-//    }
-//    else
-//    {
-//      std::cerr << " state: not valid yet" << std::endl;
-    //}
-  }
 }
