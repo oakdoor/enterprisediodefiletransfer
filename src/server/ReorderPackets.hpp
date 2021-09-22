@@ -36,7 +36,7 @@ public:
   void write(Packet&& packet, StreamInterface* streamWrapper);
 
   enum unloadQueueThreadStatus { error, empty, idle, running, done, interrupted };
-  unloadQueueThreadStatus unloadQueueThreadState = unloadQueueThreadStatus::idle;
+  bool isQueueBeingUnloaded = false;
   bool isDone() const;
 
 private:
@@ -63,5 +63,5 @@ private:
 
   long unsigned int queueSize;
 
-  std::promise<void> runThread;
+  std::promise<void> exitSignal;
 };

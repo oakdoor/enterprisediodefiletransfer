@@ -10,9 +10,7 @@
 #include <chrono>
 #include <future>
 #include <iostream>
-#include <memory>
 #include <optional>
-#include <thread>
 
 ReorderPackets::ReorderPackets(
   std::uint32_t maxBufferSize,
@@ -28,7 +26,7 @@ ReorderPackets::ReorderPackets(
 
 ReorderPackets::~ReorderPackets()
 {
-  runThread.set_value();
+  exitSignal.set_value();
   while (!isDone()) {usleep(100); }
 }
 
@@ -36,7 +34,7 @@ void ReorderPackets::write(Packet&& packet, StreamInterface* streamWrapper)
 {
   logOutOfOrderPackets(packet.headerParams.frameCount);
   addFrameToQueue(std::move(packet));
-  if (unloadQueueThreadState == unloadQueueThreadStatus::idle)
+  if (!isQueueBeingUnloaded)
   {
     startUnloadQueueThread(streamWrapper);
   }
@@ -79,7 +77,7 @@ void ReorderPackets::addFrameToQueue(Packet&& packet)
 
 void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 {
-  unloadQueueThreadState = unloadQueueThreadStatus::running;
+  isQueueBeingUnloaded = true;
   try
   {
     queueProcessorThread = std::async(std::launch::async, [&, streamWrapper]() {ReorderPackets::unloadQueueThread(streamWrapper); return true; });
@@ -94,7 +92,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 
 void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
 {
-  while (runThread.get_future().wait_for(std::chrono::microseconds(0)) != std::future_status::ready)
+  while (exitSignal.get_future().wait_for(std::chrono::microseconds(0)) != std::future_status::ready)
   {
     try
     {

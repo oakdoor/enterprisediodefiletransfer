@@ -70,6 +70,7 @@ TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still popu
   auto queueManager = ReorderPackets(4, 1024, DiodeType::basic);
   queueManager.write({HeaderParams{0, 2, false, {}}, {'B', 'C'}}, &stream);
   }
+  // If thread was still running this would have blocked forever
 }
 //
 //TEST_CASE("ReorderPackets. Out-of-order packets")
