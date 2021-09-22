@@ -29,6 +29,10 @@ public:
     DiodeType diodeType,
     std::uint32_t maxFilenameLength = 65);
 
+  ReorderPackets(ReorderPackets&&) = default;
+
+  ~ReorderPackets();
+
   void write(Packet&& packet, StreamInterface* streamWrapper);
 
   enum unloadQueueThreadStatus { error, empty, idle, running, done, interrupted };
@@ -59,5 +63,5 @@ private:
 
   long unsigned int queueSize;
 
-  std::promise<int> streamClosedPromise;
+  std::promise<void> runThread;
 };

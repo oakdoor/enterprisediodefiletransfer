@@ -58,6 +58,19 @@ TEST_CASE("ReorderPackets. Handling filename", "[tagged]")
     REQUIRE(stream.storedFilename == "rejected.12345");
   }
 }
+
+TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still populated")
+{
+
+  std::stringstream outputStream;
+  bool notused1;
+  bool notused2;
+  StreamSpy stream(outputStream, 1, notused1, notused2);
+  {
+  auto queueManager = ReorderPackets(4, 1024, DiodeType::basic);
+  queueManager.write({HeaderParams{0, 2, false, {}}, {'B', 'C'}}, &stream);
+  }
+}
 //
 //TEST_CASE("ReorderPackets. Out-of-order packets")
 //{

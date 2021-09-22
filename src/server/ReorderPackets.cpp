@@ -26,6 +26,12 @@ ReorderPackets::ReorderPackets(
 {
 }
 
+ReorderPackets::~ReorderPackets()
+{
+  runThread.set_value();
+  while (!isDone()) {usleep(100); }
+}
+
 void ReorderPackets::write(Packet&& packet, StreamInterface* streamWrapper)
 {
   logOutOfOrderPackets(packet.headerParams.frameCount);
@@ -88,7 +94,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 
 void ReorderPackets::unloadQueueThread(StreamInterface* streamWrapper)
 {
-  while (true)
+  while (runThread.get_future().wait_for(std::chrono::microseconds(0)) != std::future_status::ready)
   {
     try
     {
