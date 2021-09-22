@@ -9,13 +9,9 @@
 #include <boost/thread.hpp>
 #include <future>
 
-#define WAIT_FOR_FUTURE (isStreamClosedFuture.wait_for(std::chrono::microseconds(10000)) == std::future_status::ready)
-
-void queueManagerWriteHelper(ReorderPackets&& queueManager, std::string inputStream, StreamSpy stream);
-
 inline void waitForQueue(ReorderPackets& queueManager)
 {
-  while (!queueManager.isDone()) { usleep(1); };
+  while (!queueManager.isDone()) { usleep(100); };
 }
 
 TEST_CASE("ReorderPackets. Packets received in order are written to the output")
@@ -72,54 +68,50 @@ TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still popu
   }
   // If thread was still running this would have blocked forever
 }
-//
-//TEST_CASE("ReorderPackets. Out-of-order packets")
-//{
-//  std::promise<int> isStreamClosedPromise;
-//  std::future<int> isStreamClosedFuture = isStreamClosedPromise.get_future();
-//  std::stringstream outputStream;
-//  bool notused1;
-//  bool notused2;
-//  StreamSpy stream(outputStream, 1, notused1, notused2);
-////  auto queueManager = ReorderPackets(16, 1024, DiodeType::basic);
-//  auto queueManager = ReorderPackets(4, 1024, DiodeType::basic, std::move(isStreamClosedPromise));
-//
-//  SECTION("Frame 2 and 3 are not written to the output if frame 1 missing")
-//  {
-//    auto inputStream = std::string("BC");
-//    queueManager.write({HeaderParams{0, 2, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//    WAIT_FOR_FUTURE;
-//    REQUIRE(outputStream.str().empty());
-//
-//    inputStream = std::string("DE");
-//    queueManager.write({HeaderParams{0, 3, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//    WAIT_FOR_FUTURE;
-//    REQUIRE(outputStream.str().empty());
-//
-//    SECTION("After frame 1 arrives, frame 2 and 3 are written to the output")
-//    {
-//      inputStream = std::string("ZA");
-//      queueManager.write({HeaderParams{0, 1, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//      WAIT_FOR_FUTURE;
-//      REQUIRE(outputStream.str() == "ZABCDE");
-//
-//      SECTION("Frame 4 is EOF and is written to to the output and write returns true")
-//      {
-//        inputStream = std::string("{name: !str \"testFilename\"}");
-//        queueManager.write({HeaderParams{0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
-//        WAIT_FOR_FUTURE;
-//        REQUIRE(outputStream.str() == "ZABCDE");
-//      }
-//
+
+TEST_CASE("ReorderPackets. Out-of-order packets")
+{
+  std::stringstream outputStream;
+  bool notused1;
+  bool notused2;
+  StreamSpy stream(outputStream, 1, notused1, notused2);
+  auto queueManager = ReorderPackets(4, 1024, DiodeType::basic);
+
+  SECTION("Frame 2 and 3 are not written to the output if frame 1 missing")
+  {
+    auto inputStream = std::string("BC");
+    queueManager.write({HeaderParams {0, 2, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+    REQUIRE(outputStream.str().empty());
+
+    inputStream = std::string("DE");
+    queueManager.write({HeaderParams {0, 3, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+    REQUIRE(outputStream.str().empty());
+
+    SECTION("After frame 1 arrives, frame 2 and 3 are written to the output")
+    {
+      inputStream = std::string("ZA");
+      queueManager.write({HeaderParams {0, 1, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+      waitForQueue(queueManager);
+      REQUIRE(queueManager.isDone());
+      REQUIRE(outputStream.str() == "ZABCDE");
+
+      SECTION("Frame 4 is EOF and is written to to the output and write returns true")
+      {
+        inputStream = std::string("{name: !str \"testFilename\"}");
+        queueManager.write({HeaderParams {0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+        waitForQueue(queueManager);
+        REQUIRE(outputStream.str() == "ZABCDE");
+      }
+
 //      SECTION("Frame 5 is eof with filename, but waits for all missing packets before setting filename.")
 //      {
 //        inputStream = std::string("{name: !str \"testFilename\"}");
-//        queueManager.write({HeaderParams{0, 5, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 5, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //        REQUIRE_FALSE(stream.storedFilename == "testFilename");
 //        inputStream = std::string("FG");
-//        queueManager.write({HeaderParams{0, 4, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 4, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDEFG");
 //        REQUIRE(stream.storedFilename == "testFilename");
@@ -128,12 +120,12 @@ TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still popu
 //      SECTION("Frame 4 is EOF and a frame with frameCount above the eofFrame is ignored.")
 //      {
 //        inputStream = std::string("YZ");
-//        queueManager.write({HeaderParams{0, 99, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 99, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //
 //        inputStream = std::string("{name: !str \"testFilename\"}");
-//        queueManager.write({HeaderParams{0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //      }
@@ -141,12 +133,12 @@ TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still popu
 //      SECTION("Frame 4 is EOF and a frame with frameCount above the eofFrame and eof true is ignored.")
 //      {
 //        inputStream = std::string("");
-//        queueManager.write({HeaderParams{0, 99, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 99, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //
 //        inputStream = std::string("{name: !str \"testFilename\"}");
-//        queueManager.write({HeaderParams{0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 4, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //      }
@@ -155,22 +147,23 @@ TEST_CASE("ReorderPackets. ReorderPackets can be shut down with queue still popu
 //              "a spurious eof packet with a higher frameCount does not reassign the eofFrameNumber.")
 //      {
 //        inputStream = std::string("{name: !str \"testFilename\"}");
-//        queueManager.write({HeaderParams{0, 5, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 5, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //        inputStream = std::string("{name: !str \"wrongFilename\"}");
-//        queueManager.write({HeaderParams{0, 99, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 99, true, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDE");
 //        inputStream = std::string("FG");
-//        queueManager.write({HeaderParams{0, 4, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
+//        queueManager.write({HeaderParams {0, 4, false, {}}, {inputStream.begin(), inputStream.end()}}, &stream);
 //        WAIT_FOR_FUTURE;
 //        REQUIRE(outputStream.str() == "ZABCDEFG");
 //
 //        REQUIRE(stream.storedFilename == "testFilename");
 //      }
-//    }
-//  }
+    }
+  }
+}
 //
 //  SECTION("Packets are held in the queue until all previous packets are received")
 //  {

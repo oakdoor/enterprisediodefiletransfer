@@ -77,7 +77,6 @@ void ReorderPackets::addFrameToQueue(Packet&& packet)
 
 void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
 {
-  isQueueBeingUnloaded = true;
   try
   {
     queueProcessorThread = std::async(std::launch::async, [&, streamWrapper]() {ReorderPackets::unloadQueueThread(streamWrapper); return true; });
@@ -87,6 +86,7 @@ void ReorderPackets::startUnloadQueueThread(StreamInterface* streamWrapper)
     spdlog::error(std::string("#Caught exception when starting thread: ") + exception.what());
     exit(1);
   }
+  isQueueBeingUnloaded = true;
   spdlog::info("#started thread");
 }
 
