@@ -81,21 +81,21 @@ void SessionManager::closeSession(std::uint32_t sessionId)
 
 void SessionManager::checkStreamFutures()
 {
-  for (auto& sessionFuturePair : streamFutures)
+  for (auto& sessionFuturePair : streams)
   {
     std::cerr << "sessionID:" << sessionFuturePair.first;
-    if (sessionFuturePair.second.valid() && (sessionFuturePair.second.wait_for(std::chrono::microseconds(100)) == std::future_status::ready))
-    {
-      int state = sessionFuturePair.second.get();
-      std::cerr << " state:" << state << std::endl;
-      if (state == 1)
-      {
-        closeSession(sessionFuturePair.first);
-      }
-    }
-    else
-    {
-      std::cerr << " state: not valid yet" << std::endl;
-    }
+//    if (sessionFuturePair.second.valid() && (sessionFuturePair.second.wait_for(std::chrono::microseconds(100)) == std::future_status::ready))
+//    {
+//      int state = sessionFuturePair.second.get();
+//      std::cerr << " state:" << state << std::endl;
+//      if (state == 1)
+//      {
+//        closeSession(sessionFuturePair.first);
+//      }
+//    }
+//    else
+//    {
+//      std::cerr << " state: not valid yet" << std::endl;
+    //}
   }
 }

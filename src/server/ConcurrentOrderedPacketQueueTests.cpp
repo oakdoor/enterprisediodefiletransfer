@@ -4,6 +4,22 @@
 #include "ConcurrentOrderedPacketQueue.hpp"
 #include "Packet.hpp"
 #include "test/catch.hpp"
+#include <unistd.h>
+
+inline std::optional<Packet> waitForPacket(ConcurrentOrderedPacketQueue& queue, std::uint32_t frame)
+{
+  std::int32_t timeout = 10000;
+  while (timeout-- > 0)
+  {
+    if (auto packet = queue.nextInSequencePacket(frame, 0); packet)
+    {
+      return packet;
+    }
+    usleep(10);
+  }
+
+  return {};
+}
 
 TEST_CASE("ConcurrentOrderedPacketQueue.")
 {
@@ -13,6 +29,25 @@ TEST_CASE("ConcurrentOrderedPacketQueue.")
   {
     REQUIRE_FALSE(queue.nextInSequencePacket(1, 0).has_value());
   }
+
+  SECTION("maintains ordering of packets")
+  {
+    queue.emplace({HeaderParams{0, 1, false, {}}, {'A', 'B'}});
+    queue.emplace({HeaderParams{0, 2, false, {}}, {'C', 'D'}});
+
+    REQUIRE(waitForPacket(queue, 1)->headerParams.frameCount == 1);
+    REQUIRE(waitForPacket(queue, 2)->headerParams.frameCount == 2);
+  }
+
+  SECTION("re-orders packets")
+  {
+    queue.emplace({HeaderParams{0, 2, false, {}}, {'A', 'B'}});
+    queue.emplace({HeaderParams{0, 1, false, {}}, {'C', 'D'}});
+
+    REQUIRE(waitForPacket(queue, 1)->headerParams.frameCount == 1);
+    REQUIRE(waitForPacket(queue, 2)->headerParams.frameCount == 2);
+  }
+
 
   SECTION("ConcurrentOrderedPacketQueue returns the 'found' status "
           "and the packet at the top of the queue if it's the next in the sequence")

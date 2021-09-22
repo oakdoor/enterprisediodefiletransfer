@@ -13,6 +13,26 @@
 
 #define WAIT_FOR_ASYNC_THREAD usleep(10000)
 
+namespace testers
+{
+inline bool waitForResult(std::function<bool()> func)
+{
+  const std::int32_t tightWait(10);
+  std::int32_t timeout(100000);
+  while (!func())
+  {
+    usleep(10);
+    timeout = timeout - tightWait;
+    if (timeout <= 0)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+}
+
 TEST_CASE("ED server.")
 {
   std::stringstream outputStream;
@@ -26,27 +46,24 @@ TEST_CASE("ED server.")
   SECTION("A packet received by the server is written to the stream")
   {
     edServer.receivePacket(createTestPacketStream(1, 1, false), {'B'});
-    WAIT_FOR_ASYNC_THREAD;
+
+    REQUIRE(testers::waitForResult([&outputStream](){ return outputStream.str() == std::string("B");}));
     REQUIRE(outputStream.str() == std::string("B"));
 
     const std::string filename = "{name: !str \"testFilename\"}";
     edServer.receivePacket(createTestPacketStream(1, 2, true), {filename.begin(), filename.end()});
-    WAIT_FOR_ASYNC_THREAD;
-    REQUIRE(outputStream.str() == std::string("B"));
+
+    testers::waitForResult([&](){ return outputStream.str() == std::string("B");});
   }
 
   SECTION("Packets received are inserted into the same stream until the EOF flag is raised")
   {
     edServer.receivePacket(createTestPacketStream(1, 1, false), {'B', 'C'});
-    WAIT_FOR_ASYNC_THREAD;
-    REQUIRE(outputStream.str() == std::string("BC"));
-
     edServer.receivePacket(createTestPacketStream(1, 2, false), {'D'});
-    WAIT_FOR_ASYNC_THREAD;
+    testers::waitForResult([&](){ return outputStream.str() == std::string("BCD");});
     REQUIRE(outputStream.str() == std::string("BCD"));
     std::string filename = "{name: !str \"testFilename\"}";
     edServer.receivePacket(createTestPacketStream(1, 3, true), {filename.begin(), filename.end()} );
-    WAIT_FOR_ASYNC_THREAD;
     REQUIRE(outputStream.str() == std::string("BCD"));
   }
 
